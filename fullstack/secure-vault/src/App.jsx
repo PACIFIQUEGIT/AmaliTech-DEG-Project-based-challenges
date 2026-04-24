@@ -6,7 +6,6 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [search, setSearch] = useState("");
-
   const [expanded, setExpanded] = useState({});
 
   const toggleFolder = (id) => {
@@ -27,9 +26,7 @@ export default function App() {
           );
 
           if (
-            node.name
-              .toLowerCase()
-              .includes(term.toLowerCase()) ||
+            node.name.toLowerCase().includes(term.toLowerCase()) ||
             filteredChildren.length
           ) {
             return {
@@ -71,10 +68,14 @@ export default function App() {
     }
 
     expandAll(visibleData);
-    setExpanded((prev) => ({ ...prev, ...all }));
+
+    setExpanded((prev) => ({
+      ...prev,
+      ...all,
+    }));
   }, [search, visibleData]);
 
-  // FLAT TREE FOR KEYBOARD
+  // FLAT TREE FOR KEYBOARD NAV
   const flatItems = useMemo(() => {
     const items = [];
 
@@ -96,8 +97,18 @@ export default function App() {
     return items;
   }, [expanded, visibleData]);
 
+  // KEEP FOCUS VALID
   useEffect(() => {
-    function handleKey(e) {
+    if (focusedIndex > flatItems.length - 1) {
+      setFocusedIndex(0);
+    }
+  }, [flatItems, focusedIndex]);
+
+  // KEYBOARD CONTROLS
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (!flatItems.length) return;
+
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setFocusedIndex((prev) =>
@@ -107,16 +118,22 @@ export default function App() {
 
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        setFocusedIndex((prev) => Math.max(prev - 1, 0));
+        setFocusedIndex((prev) =>
+          Math.max(prev - 1, 0)
+        );
       }
 
       if (e.key === "Enter") {
         const item = flatItems[focusedIndex];
-        if (item?.type === "file") setSelected(item);
+
+        if (item?.type === "file") {
+          setSelected(item);
+        }
       }
 
       if (e.key === "ArrowRight") {
         const item = flatItems[focusedIndex];
+
         if (item?.type === "folder") {
           setExpanded((prev) => ({
             ...prev,
@@ -127,6 +144,7 @@ export default function App() {
 
       if (e.key === "ArrowLeft") {
         const item = flatItems[focusedIndex];
+
         if (item?.type === "folder") {
           setExpanded((prev) => ({
             ...prev,
@@ -134,11 +152,13 @@ export default function App() {
           }));
         }
       }
-    }
+    };
 
     window.addEventListener("keydown", handleKey);
-    return () =>
+
+    return () => {
       window.removeEventListener("keydown", handleKey);
+    };
   }, [flatItems, focusedIndex]);
 
   const focusedItem = flatItems[focusedIndex];
@@ -160,7 +180,9 @@ export default function App() {
             type="text"
             placeholder="Search files..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
             className="w-full mb-4 px-3 py-2 rounded-lg bg-zinc-800 text-sm outline-none"
           />
 
